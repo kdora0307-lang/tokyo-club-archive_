@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tokyo Club Archive</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #000000;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scene {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.scene.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.scene img {
+  max-width: 95vw;
+  max-height: 90vh;
+  object-fit: contain;
+  display: block;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Envelope closed */
+.envelope-closed-scene img {
+  max-width: 98vw;
+  max-height: 98vh;
+}
+
+/* Letter - with hover effect */
+.envelope-open-scene img {
+  max-width: 98vw;
+  max-height: 98vh;
+  cursor: pointer;
+}
+
+.envelope-open-scene img:hover {
+  transform: scale(1.05);
+}
+
+/* Folder closed */
+.folder-scene img {
+  max-width: 98vw;
+  max-height: 98vh;
+}
+
+/* Opened folder workspace */
+.workspace-scene {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  cursor: default;
+}
+
+.folder-background {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 85vw;
+  max-height: 85vh;
+  object-fit: contain;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Draggable files - ORIGINAL SIZE */
+.draggable-file {
+  position: absolute;
+  cursor: grab;
+  z-index: 10;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  opacity: 0;
+  touch-action: none;
+  --file-rotation: 0deg;
+  --file-scale: 1;
+  transform: rotate(var(--file-rotation)) scale(var(--file-scale));
+  transition:
+    left 1.15s cubic-bezier(0.22, 1, 0.36, 1),
+    top 1.15s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s ease,
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+.draggable-file:active {
+  cursor: grabbing;
+  z-index: 100;
+}
+
+.draggable-file:hover {
+  --file-scale: 1.03;
+}
+
+/* Map file - clickable */
+#file-map {
+  cursor: grab;
+}
+
+#file-map:hover {
+  filter: brightness(1.1);
+}
+
+/* Initial positions (all centered, ready to scatter) */
+.draggable-file {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(0deg) scale(0.82);
+}
+
+.workspace-scene.is-ready .draggable-file {
+  transition:
+    left 1.15s cubic-bezier(0.22, 1, 0.36, 1),
+    top 1.15s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s ease,
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+.workspace-scene.is-ready .draggable-file.is-dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+.click-hint {
+  position: absolute;
+  bottom: 60px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  animation: pulse 2s ease-in-out infinite;
+  z-index: 1000;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+.hover-hint {
+  position: absolute;
+  bottom: 60px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+  z-index: 1000;
+}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <!-- STAGE 1: CLOSED ENVELOPE -->
+    <div class="scene envelope-closed-scene active">
+      <img src="assets/images/envelope-closed.jpg" alt="Envelope">
+      <div class="click-hint">Click to open</div>
+    </div>
+
+    <!-- STAGE 2: OPENED ENVELOPE WITH LETTER -->
+    <div class="scene envelope-open-scene">
+      <img src="assets/images/envelope-open.jpg" alt="Letter">
+      <div class="click-hint">Click to continue</div>
+    </div>
+
+    <!-- STAGE 3: ARCHIVE FOLDER CLOSED -->
+    <div class="scene folder-scene">
+      <img src="assets/images/folder-closed.jpg" alt="Archive Folder">
+      <div class="click-hint">Click to open</div>
+    </div>
+
+    <!-- STAGE 4: OPENED EMPTY FOLDER WITH SCATTERED FILES -->
+    <div class="scene workspace-scene">
+      <!-- Empty opened folder background -->
+      <img class="folder-background" src="assets/images/folder-open.jpg" alt="Opened Folder">
+      
+      <!-- Files (original size, will scatter on open) -->
+      <img id="file-polaroid" class="draggable-file" src="assets/images/file-polaroid.png" alt="Polaroid">
+      <img id="file-atelier" class="draggable-file" src="assets/images/file-atelier.png" alt="Atelier Ani">
+      <img id="file-map" class="draggable-file" src="assets/images/file-map.png" alt="Interactive Map">
+      <img id="file-receipt" class="draggable-file" src="assets/images/file-receipt.png" alt="Receipt">
+      <img id="file-surfboard" class="draggable-file" src="assets/images/file-surfboard.png" alt="Surfboard">
+      <img id="file-sticky" class="draggable-file" src="assets/images/file-sticky.png" alt="Sticky Note">
+      
+      <div class="hover-hint">Drag files to explore • Click map to navigate</div>
+    </div>
+  </div>
+
+  <script>
+    let currentStage = 0;
+    const stages = ['envelope-closed-scene', 'envelope-open-scene', 'folder-scene', 'workspace-scene'];
+    
+    const workspaceScene = document.querySelector('.workspace-scene');
+    const draggableFiles = Array.from(document.querySelectorAll('.draggable-file'));
+    const scatterLayout = {
+      'file-polaroid': { x: 0.26, y: 0.34, rotate: -8, z: 14 },
+      'file-atelier': { x: 0.67, y: 0.24, rotate: 5, z: 13 },
+      'file-map': { x: 0.47, y: 0.5, rotate: -3, z: 16 },
+      'file-receipt': { x: 0.72, y: 0.64, rotate: 7, z: 12 },
+      'file-surfboard': { x: 0.3, y: 0.67, rotate: -5, z: 11 },
+      'file-sticky': { x: 0.5, y: 0.3, rotate: 12, z: 15 }
+    };
+
+    const fileState = new Map();
+    const hitTestCache = new WeakMap();
+    let scatterInitialized = false;
+
+    function setFilePosition(file, left, top, rotation, zIndex) {
+      const state = fileState.get(file) || {};
+      state.left = left;
+      state.top = top;
+      state.rotation = rotation;
+      state.zIndex = zIndex ?? state.zIndex ?? 10;
+      fileState.set(file, state);
+
+      file.style.left = `${left}px`;
+      file.style.top = `${top}px`;
+      file.style.opacity = '1';
+      file.style.zIndex = state.zIndex;
+      file.style.setProperty('--file-rotation', `${rotation}deg`);
+      file.style.transform = `rotate(${rotation}deg) scale(var(--file-scale))`;
+    }
+
+    function getHitCanvas(file) {
+      if (hitTestCache.has(file)) {
+        return hitTestCache.get(file);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = file.naturalWidth;
+      canvas.height = file.naturalHeight;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      context.drawImage(file, 0, 0);
+
+      const cached = { canvas, context };
+      hitTestCache.set(file, cached);
+      return cached;
+    }
+
+    function isOpaqueHit(file, clientX, clientY) {
+      const rect = file.getBoundingClientRect();
+      if (
+        clientX < rect.left ||
+        clientX > rect.right ||
+        clientY < rect.top ||
+        clientY > rect.bottom
+      ) {
+        return false;
+      }
+
+      if (!file.naturalWidth || !file.naturalHeight) {
+        return true;
+      }
+
+      const state = fileState.get(file);
+      const rotation = ((state && state.rotation) || 0) * Math.PI / 180;
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const deltaX = clientX - centerX;
+      const deltaY = clientY - centerY;
+      const localX = deltaX * Math.cos(rotation) + deltaY * Math.sin(rotation) + file.offsetWidth / 2;
+      const localY = -deltaX * Math.sin(rotation) + deltaY * Math.cos(rotation) + file.offsetHeight / 2;
+
+      if (
+        localX < 0 ||
+        localX > file.offsetWidth ||
+        localY < 0 ||
+        localY > file.offsetHeight
+      ) {
+        return false;
+      }
+
+      const relativeX = localX / file.offsetWidth;
+      const relativeY = localY / file.offsetHeight;
+      const pixelX = Math.max(0, Math.min(file.naturalWidth - 1, Math.floor(relativeX * file.naturalWidth)));
+      const pixelY = Math.max(0, Math.min(file.naturalHeight - 1, Math.floor(relativeY * file.naturalHeight)));
+
+      try {
+        const { context } = getHitCanvas(file);
+        const alpha = context.getImageData(pixelX, pixelY, 1, 1).data[3];
+        return alpha > 24;
+      } catch (error) {
+        return true;
+      }
+    }
+
+    function initializeScatteredFiles() {
+      if (scatterInitialized) return;
+      scatterInitialized = true;
+      const workspaceRect = workspaceScene.getBoundingClientRect();
+
+      draggableFiles.forEach((file) => {
+        const layout = scatterLayout[file.id];
+        if (!layout) return;
+
+        const width = file.offsetWidth;
+        const height = file.offsetHeight;
+        const targetLeft = workspaceRect.width * layout.x - width / 2;
+        const targetTop = workspaceRect.height * layout.y - height / 2;
+
+        fileState.set(file, {
+          left: targetLeft,
+          top: targetTop,
+          rotation: layout.rotate,
+          zIndex: layout.z
+        });
+      });
+
+      requestAnimationFrame(() => {
+        draggableFiles.forEach((file) => {
+          const state = fileState.get(file);
+          if (!state) return;
+          setFilePosition(file, state.left, state.top, state.rotation, state.zIndex);
+        });
+        workspaceScene.classList.add('is-ready');
+      });
+    }
+
+    function openMapPage() {
+      window.location.href = 'file:///C:/Users/Asus/Documents/Codex/2026-04-25/i-have-this-code-already-to/tokyo-club-archive.html';
+    }
+
+    // Click handler for first 3 stages
+    document.body.addEventListener('click', (e) => {
+      // Only advance stages if we're not in workspace and didn't click on a draggable file
+      if (currentStage < stages.length - 1 && !e.target.classList.contains('draggable-file')) {
+        // Hide current stage
+        document.querySelector(`.${stages[currentStage]}`).classList.remove('active');
+        
+        // Show next stage
+        currentStage++;
+        document.querySelector(`.${stages[currentStage]}`).classList.add('active');
+        
+        // Remove cursor pointer when we reach workspace
+        if (currentStage === stages.length - 1) {
+          document.body.style.cursor = 'default';
+          initializeScatteredFiles();
+        }
+      }
+    });
+
+    let pointerState = null;
+    let highestZIndex = 20;
+
+    draggableFiles.forEach((file) => {
+      file.addEventListener('pointerdown', (e) => {
+        if (currentStage !== stages.length - 1) return;
+        const state = fileState.get(file);
+        if (!state) return;
+
+        pointerState = {
+          file,
+          pointerId: e.pointerId,
+          startX: e.clientX,
+          startY: e.clientY,
+          originLeft: state.left,
+          originTop: state.top,
+          dragStarted: false
+        };
+
+        file.setPointerCapture(e.pointerId);
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
+      file.addEventListener('pointermove', (e) => {
+        if (!pointerState || pointerState.file !== file || pointerState.pointerId !== e.pointerId) return;
+
+        const deltaX = e.clientX - pointerState.startX;
+        const deltaY = e.clientY - pointerState.startY;
+        const movedEnough = Math.hypot(deltaX, deltaY) > 6;
+
+        if (!pointerState.dragStarted && movedEnough) {
+          pointerState.dragStarted = true;
+          file.classList.add('is-dragging');
+          highestZIndex += 1;
+          const state = fileState.get(file);
+          state.zIndex = highestZIndex;
+          file.style.zIndex = highestZIndex;
+        }
+
+        if (!pointerState.dragStarted) return;
+
+        const nextLeft = pointerState.originLeft + deltaX;
+        const nextTop = pointerState.originTop + deltaY;
+        const state = fileState.get(file);
+        setFilePosition(file, nextLeft, nextTop, state.rotation, state.zIndex);
+      });
+
+      file.addEventListener('pointerup', (e) => {
+        if (!pointerState || pointerState.file !== file || pointerState.pointerId !== e.pointerId) return;
+
+        const wasDrag = pointerState.dragStarted;
+        file.classList.remove('is-dragging');
+        file.releasePointerCapture(e.pointerId);
+        pointerState = null;
+
+        if (file.id === 'file-map' && !wasDrag) {
+          openMapPage();
+        }
+      });
+
+      file.addEventListener('pointercancel', () => {
+        if (!pointerState || pointerState.file !== file) return;
+        file.classList.remove('is-dragging');
+        try {
+          file.releasePointerCapture(pointerState.pointerId);
+        } catch (error) {}
+        pointerState = null;
+      });
+    });
+
+    document.addEventListener('pointerup', () => {
+      if (!pointerState) return;
+      pointerState.file.classList.remove('is-dragging');
+      pointerState = null;
+    });
+
+    window.addEventListener('resize', () => {
+      if (!scatterInitialized) return;
+      scatterInitialized = false;
+      initializeScatteredFiles();
+    });
+  </script>
+</body>
+</html>
