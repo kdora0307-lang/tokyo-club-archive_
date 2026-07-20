@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokyo Club Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:wght@500;600;700&family=DM+Mono:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  crossorigin=""
+>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --paper: #f0ebe2;
+  --paper2: #e8e3da;
+  --paper3: #ddd8cf;
+  --paper4: #cfc3ad;
+  --paper5: #b9aa92;
+  --rule: #ccc7be;
+  --rule2: #bcb7ae;
+  --ink: #1c1814;
+  --ink2: #4a4540;
+  --ink3: #8a8580;
+  --current: #e8356d;
+  --former: #7b8ca4;
+  --hdr: 44px;
+  --tl: 30px;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "DM Mono", monospace;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.h-logo {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(240, 235, 226, 0.9);
+  border: 1px solid rgba(72, 58, 44, 0.2);
+  box-shadow: 0 8px 20px rgba(18, 12, 7, 0.08);
+  pointer-events: auto;
+}
+
+.h-jp {
+  font-family: "Noto Sans JP", sans-serif;
+  font-weight: 700;
+  font-size: 0;
+  color: var(--ink);
+  letter-spacing: 0.08em;
+}
+
+.h-jp::before {
+  content: "東京クラブアーカイブ";
+  font-size: 11px;
+}
+
+.h-slash {
+  width: 1px;
+  height: 14px;
+  background: rgba(74, 69, 64, 0.2);
+}
+
+.h-en {
+  font-family: "DM Mono", monospace;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.h-mid {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(240, 235, 226, 0.82);
+  border: 1px solid rgba(72, 58, 44, 0.14);
+  box-shadow: 0 4px 14px rgba(18, 12, 7, 0.05);
+  pointer-events: auto;
+}
+
+.h-filters {
+  display: flex;
+}
+
+.fb {
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: "DM Mono", monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  padding: 6px 11px;
+  margin-right: 6px;
+  transition: all 0.15s;
+}
+
+.fb:hover {
+  color: var(--ink2);
+  border-color: rgba(73, 59, 45, 0.18);
+}
+
+.fb.on {
+  color: var(--ink);
+  background: rgba(207, 195, 173, 0.62);
+  border-color: rgba(73, 59, 45, 0.24);
+}
+
+.h-n {
+  font-size: 8.5px;
+  letter-spacing: 0.15em;
+  color: var(--ink3);
+  padding-left: 14px;
+  border-left: 1px solid var(--rule);
+}
+
+.h-right {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  background: rgba(240, 235, 226, 0.82);
+  border: 1px solid rgba(72, 58, 44, 0.14);
+  box-shadow: 0 4px 14px rgba(18, 12, 7, 0.05);
+  pointer-events: auto;
+}
+
+.leg {
+  display: none;
+  align-items: center;
+  gap: 5px;
+}
+
+.leg-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+/* Night mode toggle button */
+.night-toggle {
+  background: none;
+  border: 1px solid var(--rule2);
+  cursor: pointer;
+  font-family: "DM Mono", monospace;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  padding: 6px 12px;
+  border-radius: 3px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.night-toggle:hover {
+  color: var(--ink);
+  border-color: var(--ink3);
+}
+
+.night-toggle.active {
+  background: var(--ink2);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.night-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.night-toggle.active .night-icon::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  box-shadow: inset 2px -2px 0 0 var(--ink2);
+}
+
+#stage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+#map {
+  position: absolute;
+  inset: 0;
+  border: none;
+  box-shadow: none;
+}
+
+#nightDust {
+  position: absolute;
+  inset: 0;
+  z-index: 650;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+#stage.evaporating #nightDust {
+  opacity: 1;
+}
+
+.leaflet-control-attribution,
+.leaflet-control-zoom {
+  display: none !important;
+}
+
+.leaflet-container {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='1.6' fill='%23000'/%3E%3Cpath d='M16 3v9M16 20v9M3 16h9M20 16h9' stroke='%23000' stroke-width='1.4' stroke-linecap='square'/%3E%3C/svg%3E") 16 16, crosshair !important;
+  background: #17120d;
+  font-family: "DM Mono", monospace;
+}
+
+.day-map-layer {
+  filter: invert(1) sepia(0.01) brightness(0.95) contrast(1.05);
+  transition: filter 0.35s ease;
+  will-change: filter, opacity;
+}
+
+.night-map-layer {
+  opacity: 0;
+  will-change: opacity;
+}
+
+#stage.evaporating .day-map-layer {
+  filter: invert(1) sepia(0.01) brightness(0.42) contrast(1.14) blur(0.9px);
+}
+
+#stage.evaporating .leaflet-marker-pane,
+#stage.evaporating .leaflet-shadow-pane {
+  opacity: 0;
+  filter: blur(0.7px);
+  transition: opacity 0.9s ease, filter 0.9s ease;
+}
+
+body.night-mode .leaflet-container {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='1.6' fill='%23fff'/%3E%3Cpath d='M16 3v9M16 20v9M3 16h9M20 16h9' stroke='%23fff' stroke-width='1.4' stroke-linecap='square'/%3E%3C/svg%3E") 16 16, crosshair !important;
+  background: #000000;
+}
+
+.vm {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  cursor: pointer !important;
+  border: none;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 0 10px rgba(255, 255, 255, 0.16),
+    0 1px 8px rgba(0, 0, 0, 0.32);
+  transition: transform 0.15s ease;
+  overflow: visible;
+}
+
+.vm:hover,
+.vm.active {
+  transform: scale(1.65);
+}
+
+.vm.current {
+  background: radial-gradient(circle at center, rgb(191, 223, 255) 0%, rgb(215, 196, 231) 24%, rgb(227, 71, 162) 68%, rgb(223, 20, 136) 100%);
+}
+
+.vm.former {
+  background: radial-gradient(circle at center, rgb(151, 170, 212) 0%, rgb(177, 194, 228) 100%);
+}
+
+.vm.current::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(232, 53, 109, 0.8);
+  box-shadow: 0 0 0 1px rgba(255, 182, 220, 0.42);
+  animation: venuePulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+.vm.former::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(172, 188, 224, 0.28) 0%, rgba(172, 188, 224, 0.12) 48%, rgba(172, 188, 224, 0) 78%);
+  pointer-events: none;
+}
+
+@keyframes venuePulse {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.82;
+  }
+
+  72% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+
+#popup {
+  position: absolute;
+  z-index: 900;
+  width: 388px;
+  height: 242px;
+  display: none;
+  pointer-events: none;
+}
+
+#popup.open {
+  display: block;
+}
+
+.paper-stack {
+  position: absolute;
+  inset: 0;
+  perspective: 1800px;
+  pointer-events: auto;
+}
+
+.paper-card-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform: translateY(0);
+  transition: transform 0.22s ease;
+}
+
+#popup:hover .paper-card-shell {
+  transform: translateY(-8px);
+}
+
+#popup.flipped .paper-card-shell {
+  transform: translateY(-2px);
+}
+
+#popup.flipped:hover .paper-card-shell {
+  transform: translateY(-8px);
+}
+
+.paper-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.72s cubic-bezier(0.22, 0.79, 0.24, 1);
+  cursor: pointer;
+}
+
+#popup.flipped .paper-card {
+  transform: rotateY(180deg);
+}
+
+.paper-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 0;
+  overflow: hidden;
+  background-color: #efede6;
+  background-image: url("assets/images/paper-face-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 20px 34px rgba(0, 0, 0, 0.22);
+}
+
+.paper-face::before {
+  content: none;
+}
+
+.paper-face::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 12px;
+  height: 48px;
+  background-image: url("card-strip.png"), url("assets/images/paper-face-bg.jpg");
+  background-repeat: no-repeat, no-repeat;
+  background-size: 100% 100%, cover;
+  background-position: center top, center;
+  background-blend-mode: multiply;
+  filter: brightness(1.08) contrast(0.88) saturate(0.85);
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+.card-front .paper-close {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.paper-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #f2eee6;
+  color: #111;
+  font-family: "DM Mono", monospace;
+  font-size: 9px;
+  cursor: pointer;
+  z-index: 4;
+  transition: opacity 0.15s ease;
+  opacity: 0.75;
+}
+
+.paper-close:hover {
+  opacity: 1;
+}
+
+.paper-strip {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  right: 16px;
+  height: 42px;
+  padding: 8px 12px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border: none;
+  border-bottom: none;
+  background: transparent;
+  color: #111;
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+.card-front .paper-strip span {
+  opacity: 0;
+}
+
+.paper-strip span:empty {
+  display: none;
+}
+
+.paper-strip::after {
+  content: none;
+}
+
+.paper-pinmarks {
+  display: none;
+}
+
+.paper-front-body {
+  position: absolute;
+  inset: 70px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  text-align: center;
+}
+
+.paper-title-stack {
+  position: relative;
+  min-height: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(16px);
+}
+
+.paper-kicker {
+  font-size: 7px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #111;
+}
+
+.paper-title {
+  font-family: "Cormorant Garamond", serif;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 100%;
+  padding: 0 10px;
+  font-size: 58px;
+  line-height: 0.92;
+  color: #111;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  text-shadow: 0 0 0.2px rgba(0, 0, 0, 0.4);
+}
+
+.paper-subtitle {
+  position: absolute;
+  left: 50%;
+  top: 63%;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: rgba(170, 167, 160, 0.34);
+  text-shadow:
+    1px 1px 0 rgba(255, 255, 255, 0.88),
+    -1px -1px 0 rgba(202, 195, 185, 0.84);
+  pointer-events: none;
+}
+
+.paper-front-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.paper-kicker,
+.paper-location,
+.paper-years,
+.paper-front-footer {
+  display: none;
+}
+
+.paper-location {
+  font-size: 8px;
+  line-height: 1.6;
+  color: #111;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.paper-years {
+  font-size: 8px;
+  line-height: 1.6;
+  color: #111;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.paper-front-footer {
+  display: none;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 7px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #111;
+  border-top: 1px solid #ddd4c7;
+  padding-top: 9px;
+}
+
+.paper-back-body {
+  position: absolute;
+  inset: 70px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.paper-back-body::-webkit-scrollbar {
+  display: none;
+}
+
+.paper-back-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.paper-back-title {
+  font-size: 14px;
+  line-height: 1.2;
+  color: #111;
+  font-family: "DM Mono", monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.paper-back-jp {
+  margin-top: 4px;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 11px;
+  color: #111;
+}
+
+.paper-status {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: #111;
+  text-align: right;
+}
+
+.paper-copy {
+  font-size: 10px;
+  line-height: 1.55;
+  color: #111;
+}
+
+.paper-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.paper-kv {
+  border-top: 1px solid #ddd4c7;
+  padding-top: 6px;
+}
+
+.paper-kv label {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #111;
+}
+
+.paper-kv span {
+  font-size: 10px;
+  line-height: 1.45;
+  color: #111;
+}
+
+.paper-section-title {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #111;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.paper-section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #ddd4c7;
+}
+
+.paper-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.paper-slot {
+  padding: 4px 6px;
+  border: 1px solid #ddd4c7;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #111;
+}
+
+#coords {
+  position: absolute;
+  top: 32px;
+  right: 18px;
+  padding: 7px 9px 6px;
+  border: 1px solid rgba(66, 52, 38, 0.22);
+  background: rgba(240, 235, 226, 0.84);
+  font-size: 7.5px;
+  letter-spacing: 0.2em;
+  color: rgba(44, 31, 20, 0.68);
+  pointer-events: none;
+  z-index: 50;
+}
+
+#attr {
+  position: absolute;
+  bottom: 48px;
+  right: 18px;
+  max-width: 220px;
+  padding: 8px 10px 7px;
+  border: 1px solid rgba(66, 52, 38, 0.18);
+  background: rgba(240, 235, 226, 0.84);
+  font-size: 7px;
+  line-height: 1.5;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(58, 44, 31, 0.6);
+  pointer-events: none;
+  z-index: 50;
+}
+
+#ftr-zone {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  z-index: 199;
+}
+
+footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--tl);
+  z-index: 500;
+  display: flex;
+  align-items: stretch;
+  background: rgba(240, 235, 226, 0.92);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid rgba(66, 52, 38, 0.16);
+  box-shadow: none;
+  pointer-events: all;
+}
+
+.tl-lbl {
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  font-size: 7.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  border-right: 1px solid var(--rule2);
+  flex-shrink: 0;
+  font-style: italic;
+}
+
+.tl-yrs {
+  display: flex;
+  flex: 1;
+}
+
+.tl-y {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  cursor: pointer;
+  border-right: 1px solid var(--rule);
+  transition: all 0.12s;
+  position: relative;
+}
+
+.tl-y:hover {
+  color: var(--ink2);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.tl-y.on {
+  color: var(--ink);
+}
+
+.tl-y.on::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #5f4a37;
+}
+
+.tl-count {
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  font-size: 7.5px;
+  letter-spacing: 0.12em;
+  color: var(--ink3);
+  border-left: 1px solid var(--rule2);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  header {
+    grid-template-columns: 1fr;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+
+  .h-logo,
+  .h-mid,
+  .h-right {
+    padding: 9px 12px;
+    flex-wrap: wrap;
+  }
+
+  .h-right {
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  #popup {
+    width: min(344px, calc(100vw - 24px));
+    height: 228px;
+  }
+
+  .paper-title {
+    font-size: 48px;
+  }
+
+  .paper-back-title {
+    font-size: 11px;
+  }
+
+  .paper-back-body {
+    inset: 56px 14px 12px;
+  }
+
+  footer {
+    height: 34px;
+  }
+
+  .tl-lbl,
+  .tl-count {
+    display: none;
+  }
+
+  .tl-y {
+    font-size: 8px;
+  }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="h-logo">
+    <span class="h-jp">東京クラブアーカイブ</span>
+    <div class="h-slash"></div>
+    <span class="h-en">Tokyo Club Archive</span>
+  </div>
+  <div class="h-mid">
+    <div class="h-filters">
+      <button class="fb on" id="fa" type="button" onclick="setFilter('all')">All</button>
+      <button class="fb" id="ff" type="button" onclick="setFilter('former')">Former</button>
+      <button class="fb" id="fc" type="button" onclick="setFilter('current')">Current</button>
+    </div>
+    <span class="h-n" id="hcount">12 venues</span>
+  </div>
+  <div class="h-right">
+    <button class="night-toggle" id="nightToggle" onclick="toggleNightMode()">
+      <div class="night-icon"></div>
+      <span>Night</span>
+    </button>
+  </div>
+</header>
+
+<div id="stage">
+  <div id="map"></div>
+  <canvas id="nightDust" aria-hidden="true"></canvas>
+
+  <div id="popup" aria-hidden="true">
+    <div class="paper-stack">
+      <div class="paper-card-shell">
+        <div class="paper-card" onclick="toggleCardFlip(event)">
+          <section class="paper-face card-front">
+            <button class="paper-close" type="button" onclick="closePopup(event)">X</button>
+            <div class="paper-strip">
+              <span>Tokyo Club Archive</span>
+              <span id="p-front-era"></span>
+            </div>
+            <div class="paper-front-body">
+              <div class="paper-front-notes">
+                <div class="paper-kicker" id="p-front-status"></div>
+                <div class="paper-title-stack">
+                  <div class="paper-subtitle" id="p-front-jp"></div>
+                  <div class="paper-title" id="p-front-name"></div>
+                </div>
+              </div>
+              <div class="paper-front-notes">
+                <div class="paper-location" id="p-front-district"></div>
+                <div class="paper-years" id="p-front-active"></div>
+                <div class="paper-front-footer">
+                  <span id="p-front-era-footer"></span>
+                  <span>Club Card</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="paper-face card-back">
+            <button class="paper-close" type="button" onclick="closePopup(event)">X</button>
+            <div class="paper-strip">
+              <span id="p-back-era"></span>
+              <span>Archive</span>
+            </div>
+            <div class="paper-back-body">
+              <div class="paper-back-head">
+                <div>
+                  <div class="paper-back-title" id="p-back-name"></div>
+                  <div class="paper-back-jp" id="p-back-jp"></div>
+                </div>
+                <div class="paper-status" id="p-back-status"></div>
+              </div>
+
+              <div>
+                <div class="paper-section-title">Description</div>
+                <div class="paper-copy" id="p-desc"></div>
+              </div>
+
+              <div class="paper-meta" id="p-meta"></div>
+
+              <div>
+                <div class="paper-section-title">Archive Slots</div>
+                <div class="paper-slots" id="p-photos"></div>
+              </div>
+
+              <div>
+                <div class="paper-section-title">Architectural Notes</div>
+                <div class="paper-copy" id="p-arch"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="coords"></div>
+  <div id="attr">&copy; OpenStreetMap / CartoDB</div>
+  <div
+    id="ftr-zone"
+    onmouseenter="document.querySelector('footer').classList.add('vis')"
+    onmouseleave="document.querySelector('footer').classList.remove('vis')"
+  ></div>
+  <footer
+    onmouseenter="this.classList.add('vis')"
+    onmouseleave="this.classList.remove('vis')"
+  >
+    <div class="tl-lbl">Era</div>
+    <div class="tl-yrs">
+      <div class="tl-y on" id="tall" onclick="setEra('all')">All</div>
+      <div class="tl-y" id="t80s" onclick="setEra('80s')">1980s</div>
+      <div class="tl-y" id="t90s" onclick="setEra('90s')">1990s</div>
+      <div class="tl-y" id="t00s" onclick="setEra('00s')">2000s</div>
+      <div class="tl-y" id="t10s" onclick="setEra('10s')">2010s</div>
+      <div class="tl-y" id="t20s" onclick="setEra('20s')">2020s</div>
+    </div>
+    <div class="tl-count" id="tlcount">12 / 12</div>
+  </footer>
+</div>
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  crossorigin=""
+></script>
+<script>
+const TOKYO_23_WARDS = {
+  type: "Feature",
+  properties: {
+    name: "Tokyo 23 Wards",
+    source: "OpenStreetMap contributors via Nominatim relation R19631009"
+  },
+  geometry: {
+    type: "MultiPolygon",
+    coordinates: [
+      [
+        [
+          [139.5628986, 35.7615478],
+          [139.5693549, 35.7512478],
+          [139.566467, 35.7472596],
+          [139.5694797, 35.7340292],
+          [139.5653931, 35.7214977],
+          [139.5756437, 35.7184983],
+          [139.5954924, 35.7056757],
+          [139.5901131, 35.6948193],
+          [139.5867528, 35.6941284],
+          [139.5935448, 35.689377],
+          [139.5905515, 35.686885],
+          [139.5939609, 35.6823086],
+          [139.585147, 35.6827601],
+          [139.5919702, 35.6817963],
+          [139.5851435, 35.6824801],
+          [139.5886505, 35.6793568],
+          [139.5879187, 35.674426],
+          [139.582386, 35.6733489],
+          [139.5886978, 35.6706215],
+          [139.5901081, 35.6659979],
+          [139.586928, 35.6638007],
+          [139.5931752, 35.6525848],
+          [139.5922626, 35.6459871],
+          [139.5868108, 35.6462003],
+          [139.5842487, 35.6411959],
+          [139.5941365, 35.6270526],
+          [139.5924644, 35.6237909],
+          [139.5896519, 35.6245896],
+          [139.5903027, 35.6183569],
+          [139.6183205, 35.6137001],
+          [139.651048, 35.592234],
+          [139.664641, 35.589418],
+          [139.678787, 35.562987],
+          [139.703733, 35.552607],
+          [139.6979655, 35.543984],
+          [139.702224, 35.537027],
+          [139.7173, 35.538004],
+          [139.726561, 35.543575],
+          [139.7337468, 35.540866],
+          [139.7393994, 35.5451027],
+          [139.7568381, 35.5445617],
+          [139.8108242, 35.5145687],
+          [139.8577511, 35.4816556],
+          [139.8578447, 35.601831],
+          [139.8691094, 35.6219882],
+          [139.8696887, 35.6330373],
+          [139.873781, 35.639834],
+          [139.883491, 35.645119],
+          [139.8869, 35.653734],
+          [139.886428, 35.678566],
+          [139.90715, 35.684384],
+          [139.9189004, 35.6986059],
+          [139.9161802, 35.7080129],
+          [139.89765, 35.724999],
+          [139.901017, 35.738504],
+          [139.899446, 35.744386],
+          [139.884041, 35.757406],
+          [139.879457, 35.767525],
+          [139.881747, 35.772859],
+          [139.893799, 35.778707],
+          [139.893773, 35.782747],
+          [139.8727358, 35.7822441],
+          [139.8713122, 35.7883834],
+          [139.8775653, 35.7948598],
+          [139.8730047, 35.7973729],
+          [139.8596335, 35.7952972],
+          [139.8560643, 35.7908316],
+          [139.8394102, 35.8007585],
+          [139.8307573, 35.7945097],
+          [139.822844, 35.7954653],
+          [139.8195929, 35.7994683],
+          [139.8250171, 35.8120798],
+          [139.8212574, 35.8150266],
+          [139.8207842, 35.8113135],
+          [139.8148928, 35.8087174],
+          [139.7945908, 35.8052433],
+          [139.781107, 35.8071163],
+          [139.7674793, 35.8174785],
+          [139.7507206, 35.8101656],
+          [139.7507196, 35.8062467],
+          [139.7605833, 35.7975414],
+          [139.7555003, 35.7873373],
+          [139.7467442, 35.7867281],
+          [139.7453428, 35.7831195],
+          [139.7380379, 35.7801766],
+          [139.7390874, 35.7868585],
+          [139.7360404, 35.7891082],
+          [139.7246791, 35.7871491],
+          [139.7211455, 35.7914387],
+          [139.7063369, 35.7930609],
+          [139.6972635, 35.7986469],
+          [139.6946172, 35.7955946],
+          [139.6950965, 35.7997501],
+          [139.6924226, 35.8006197],
+          [139.6544472, 35.8003052],
+          [139.6480323, 35.7971572],
+          [139.640291, 35.7980297],
+          [139.6374729, 35.7907838],
+          [139.6248743, 35.7810419],
+          [139.623203, 35.7666863],
+          [139.6176822, 35.7665873],
+          [139.617203, 35.770272],
+          [139.6110346, 35.771177],
+          [139.5986839, 35.7690071],
+          [139.5973263, 35.7713002],
+          [139.6027672, 35.7756237],
+          [139.5887609, 35.7787841],
+          [139.5823884, 35.7710781],
+          [139.5703601, 35.7655457],
+          [139.5715427, 35.7634199],
+          [139.5628986, 35.7615478]
+        ]
+      ],
+      [
+        [
+          [139.5666288, 35.7633881],
+          [139.5667622, 35.7631596],
+          [139.5673381, 35.7633919],
+          [139.5672307, 35.7636337],
+          [139.5666288, 35.7633881]
+        ]
+      ]
+    ]
+  }
+};
+
+const VENUES = [
+  {
+    id: 1,
+    name: "WOMB",
+    jp: "ウォンブ",
+    status: "current",
+    era: "90s",
+    lat: 35.6584,
+    lng: 139.6949,
+    district: "Shibuya / Maruyamacho",
+    active: "1999 - present",
+    desc: "One of Tokyo's most enduring techno and house venues. Opened in 1999, it held Shibuya's underground scene through the Fueiho crackdown years and became famous for its mirror ball and sound system.",
+    arch: "A narrow Maruyamacho building with an almost anonymous entrance and a vertical climb through four floors. It feels like a place to discover rather than a place to advertise.",
+    meta: [["Opened", "1999"], ["Capacity", "~700"], ["Genre", "Techno / House"]]
+  },
+  {
+    id: 2,
+    name: "Contact",
+    jp: "コンタクト",
+    status: "current",
+    era: "10s",
+    lat: 35.659,
+    lng: 139.6969,
+    district: "Shibuya / Dogenzaka",
+    active: "2015 - present",
+    desc: "Opened right after the 2015 Fueiho reform. The strict no-photo and member-registration culture made the acoustic environment feel like the core architectural program.",
+    arch: "A deep concrete basement carved for sound, not spectacle. The room reads as a focused listening chamber more than a decorative nightclub interior.",
+    meta: [["Opened", "2015"], ["Capacity", "~300"], ["Genre", "Techno / House"]]
+  },
+  {
+    id: 3,
+    name: "Circus Tokyo",
+    jp: "サーカス東京",
+    status: "current",
+    era: "10s",
+    lat: 35.6612,
+    lng: 139.7038,
+    district: "Shibuya / Higashi",
+    active: "2013 - present",
+    desc: "A compact anchor of Tokyo underground techno with a split-level sequence: dancefloor below and bar or smoking mezzanine above.",
+    arch: "The low basement ceiling height intensifies both sound pressure and crowd density. The mezzanine gives a vertical pause without breaking the room.",
+    meta: [["Opened", "2013"], ["Capacity", "~250"], ["Genre", "Techno"]]
+  },
+  {
+    id: 4,
+    name: "WWW X",
+    jp: "WWW X",
+    status: "current",
+    era: "10s",
+    lat: 35.6609,
+    lng: 139.6984,
+    district: "Shibuya / Udagawacho",
+    active: "2015 - present",
+    desc: "One of the first major all-night venues after the reform in September 2015. Its above-grade location makes it unusual within Tokyo club typology.",
+    arch: "Set on an upper commercial floor rather than hidden below grade, so its relation to the city is less secretive and more exposed than many peers.",
+    meta: [["Opened", "2015"], ["Capacity", "~500"], ["Genre", "Electronic / Live"]]
+  },
+  {
+    id: 5,
+    name: "Daikanyama Unit",
+    jp: "代官山ユニット",
+    status: "current",
+    era: "90s",
+    lat: 35.6481,
+    lng: 139.7032,
+    district: "Daikanyama",
+    active: "1999 - present",
+    desc: "A respected mid-size venue known for long-running nights and a reputation for excellent sound.",
+    arch: "Located in the basement of the Za-House complex, with a rectangular room and comparatively generous ceiling height for Tokyo.",
+    meta: [["Opened", "1999"], ["Capacity", "~600"], ["Genre", "Electronic / Live"]]
+  },
+  {
+    id: 6,
+    name: "Solfa",
+    jp: "ソルファ",
+    status: "current",
+    era: "10s",
+    lat: 35.6461,
+    lng: 139.6987,
+    district: "Nakameguro",
+    active: "2010s - present",
+    desc: "A small basement venue that quietly became an important node for house, techno, and trance communities.",
+    arch: "A modest single-room basement where circulation, bar placement, and secondary pockets produce multiple micro-scenes.",
+    meta: [["Capacity", "~150"], ["District", "Nakameguro"], ["Genre", "House / Techno"]]
+  },
+  {
+    id: 7,
+    name: "Shelter",
+    jp: "シェルター",
+    status: "current",
+    era: "80s",
+    lat: 35.6613,
+    lng: 139.6681,
+    district: "Shimokitazawa",
+    active: "1987 - present",
+    desc: "Tokyo's oldest continuously operating basement live house and one of Shimokitazawa's cultural anchors.",
+    arch: "The basement constraint is never disguised. It becomes atmosphere: compressed, loud, and communal in a way that suits punk and indie histories.",
+    meta: [["Opened", "1987"], ["Capacity", "~200"], ["Genre", "Live / Punk / Indie"]]
+  },
+  {
+    id: 8,
+    name: "Juliana's Tokyo",
+    jp: "ジュリアナ東京",
+    status: "former",
+    era: "90s",
+    lat: 35.6432,
+    lng: 139.7459,
+    district: "Shibaura / Minato",
+    active: "1991 - 1994",
+    desc: "A defining image of bubble-era nightlife, with elevated dance platforms and warehouse-scale spectacle before its closure in 1994.",
+    arch: "The large ground-floor warehouse and raised platforms made display central to the spatial concept. The building later shifted into office use.",
+    meta: [["Active", "1991-1994"], ["Capacity", "~1,500"], ["Now", "Office building"]]
+  },
+  {
+    id: 9,
+    name: "AgeHa",
+    jp: "アゲハ",
+    status: "former",
+    era: "00s",
+    lat: 35.6383,
+    lng: 139.8213,
+    district: "Shin-Kiba",
+    active: "2002 - 2022",
+    desc: "Tokyo's largest club for two decades, with multiple dancefloors, an outdoor pool, and a shuttle-bus geography that stretched nightlife across the city.",
+    arch: "A warehouse-scale waterfront complex with rare exterior space. The outdoor pool changed the social layout as much as the building itself.",
+    meta: [["Active", "2002-2022"], ["Capacity", "2,400"], ["Demolished", "2022"]]
+  },
+  {
+    id: 10,
+    name: "Velfarre",
+    jp: "ベルファーレ",
+    status: "former",
+    era: "90s",
+    lat: 35.6647,
+    lng: 139.7317,
+    district: "Roppongi",
+    active: "1994 - 2007",
+    desc: "A landmark of Roppongi's spectacle era before redevelopment reshaped the district and the venue disappeared.",
+    arch: "Multi-floor and emphatically visible, almost the opposite of the concealed basement logic that later defined much of the underground scene.",
+    meta: [["Active", "1994-2007"], ["Capacity", "~3,000"], ["Demolished", "2007"]]
+  },
+  {
+    id: 11,
+    name: "Yellow",
+    jp: "イエロー",
+    status: "former",
+    era: "00s",
+    lat: 35.6613,
+    lng: 139.7284,
+    district: "Nishi-Azabu",
+    active: "1999 - 2009",
+    desc: "A seminal underground venue whose single-minded dancefloor culture became a reference point for later clubs.",
+    arch: "A basement room tuned toward immersion. Its spatial intensity became a prototype for post-reform underground club interiors.",
+    meta: [["Active", "1999-2009"], ["Capacity", "~500"], ["Legacy", "Precursor to Contact"]]
+  },
+  {
+    id: 12,
+    name: "Sound Museum Vision",
+    jp: "ビジョン",
+    status: "current",
+    era: "00s",
+    lat: 35.66,
+    lng: 139.6996,
+    district: "Shibuya / Dogenzaka",
+    active: "2012 - present",
+    desc: "One of the largest post-AgeHa clubs in Shibuya, shaped by the political memory of nightlife regulation as much as by music programming.",
+    arch: "A multi-floor vertical stack set inside a narrow urban plot, which is one of the clearest club typologies in central Tokyo.",
+    meta: [["Opened", "2012"], ["Capacity", "~1,000"], ["Genre", "Electronic / Mixed"]]
+  }
+];
+
+const ERA_LABELS = {
+  all: "All",
+  "80s": "1980s",
+  "90s": "1990s",
+  "00s": "2000s",
+  "10s": "2010s",
+  "20s": "2020s"
+};
+
+let filter = "all";
+let era = "all";
+let activeVenue = null;
+let popupPinned = false;
+let popupCloseTimer = null;
+let popupElement;
+let layerGroup;
+let map;
+let nightMode = false;
+let dayLayer;
+let nightLayer;
+let nightDustCanvas;
+let nightDustCtx;
+let nightTransitionFrame = 0;
+let nightTransition = null;
+
+const MAP_TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const NIGHT_EVAPORATION_MS = 1500;
+
+window.addEventListener("DOMContentLoaded", () => {
+  popupElement = document.getElementById("popup");
+  nightDustCanvas = document.getElementById("nightDust");
+  nightDustCtx = nightDustCanvas.getContext("2d");
+
+  popupElement.addEventListener("mouseenter", () => {
+    clearPopupCloseTimer();
+  });
+
+  popupElement.addEventListener("mouseleave", () => {
+    if (!popupPinned) {
+      schedulePopupClose();
+    }
+  });
+
+  map = L.map("map", {
+    center: [35.6675, 139.742],
+    zoom: 11.75,
+    zoomSnap: 0.25,
+    zoomDelta: 0.25,
+    zoomControl: false,
+    attributionControl: false,
+    preferCanvas: true
+  });
+
+  nightLayer = L.tileLayer(MAP_TILE_URL, {
+    subdomains: "abcd",
+    maxZoom: 20,
+    zIndex: 1,
+    className: "night-map-layer",
+    opacity: 0
+  }).addTo(map);
+
+  dayLayer = L.tileLayer(MAP_TILE_URL, {
+    subdomains: "abcd",
+    maxZoom: 20,
+    zIndex: 2,
+    className: "day-map-layer",
+    opacity: 1
+  }).addTo(map);
+
+  resizeNightDustCanvas();
+  window.addEventListener("resize", resizeNightDustCanvas);
+
+  const tokyoBounds = L.latLngBounds(VENUES.map((venue) => [venue.lat, venue.lng]));
+  map.fitBounds(tokyoBounds, {
+    padding: [42, 42],
+    animate: false
+  });
+  layerGroup = L.layerGroup().addTo(map);
+  addMarkers();
+  updateCounts();
+
+  map.on("mousemove", (event) => {
+    document.getElementById("coords").textContent = formatCoords(event.latlng.lat, event.latlng.lng);
+  });
+
+  map.on("move", () => {
+    if (activeVenue) {
+      positionPopup(activeVenue);
+    }
+  });
+
+  map.on("click", () => {
+    if (activeVenue) {
+      closePopup();
+    }
+  });
+});
+
+function addMarkers() {
+  layerGroup.clearLayers();
+
+  VENUES.forEach((venue) => {
+    if (!isVisible(venue)) {
+      return;
+    }
+
+    const icon = L.divIcon({
+      className: "",
+      html: `<div class="vm ${venue.status}" id="mk-${venue.id}"></div>`,
+      iconSize: [12, 12],
+      iconAnchor: [6, 6]
+    });
+
+    const marker = L.marker([venue.lat, venue.lng], {
+      icon,
+      zIndexOffset: 500
+    });
+
+    marker.on("mouseover", () => {
+      if (popupPinned && activeVenue && activeVenue.id !== venue.id) {
+        return;
+      }
+      showPopup(venue, false);
+    });
+
+    marker.on("mouseout", () => {
+      if (!popupPinned) {
+        schedulePopupClose();
+      }
+    });
+
+    marker.on("click", (event) => {
+      L.DomEvent.stopPropagation(event);
+      showPopup(venue, true);
+    });
+
+    marker.addTo(layerGroup);
+  });
+}
+
+function showPopup(venue, pinned) {
+  clearPopupCloseTimer();
+  clearActiveMarkers();
+
+  activeVenue = venue;
+  popupPinned = Boolean(pinned);
+
+  populatePopup(venue);
+
+  popupElement.classList.add("open");
+  popupElement.classList.remove("flipped");
+  popupElement.style.display = "block";
+  popupElement.setAttribute("aria-hidden", "false");
+
+  const markerNode = document.getElementById(`mk-${venue.id}`);
+  if (markerNode) {
+    markerNode.classList.add("active");
+  }
+
+  positionPopup(venue);
+}
+
+function populatePopup(venue) {
+  const eraLabel = ERA_LABELS[venue.era];
+  const backStatus = venue.status === "current"
+    ? `Open / ${venue.active}`
+    : `Closed / ${venue.active}`;
+  const frontStatus = venue.status === "current" ? "Current venue" : "Archive venue";
+
+  document.getElementById("p-front-era").textContent = "";
+  document.getElementById("p-front-status").textContent = frontStatus;
+  document.getElementById("p-front-name").textContent = venue.name;
+  document.getElementById("p-front-jp").textContent = venue.jp;
+  document.getElementById("p-front-district").textContent = venue.district;
+  document.getElementById("p-front-active").textContent = venue.active;
+  fitFrontTitle(venue.name, venue.jp);
+
+  document.getElementById("p-back-era").textContent = `${eraLabel} / ${venue.district}`;
+  document.getElementById("p-back-name").textContent = venue.name;
+  document.getElementById("p-back-jp").textContent = venue.jp;
+  document.getElementById("p-back-status").textContent = backStatus;
+  document.getElementById("p-desc").textContent = venue.desc;
+  document.getElementById("p-arch").textContent = venue.arch;
+
+  document.getElementById("p-meta").innerHTML = venue.meta
+    .map(([key, value]) => `<div class="paper-kv"><label>${key}</label><span>${value}</span></div>`)
+    .join("");
+
+  const archiveSlots = [
+    ["EXT", "Exterior"],
+    ["INT", "Interior"],
+    ["DFL", "Dancefloor"],
+    ["PLN", "Plan"],
+    ["SEC", "Section"],
+    ["ARC", "Archive"]
+  ];
+
+  document.getElementById("p-photos").innerHTML = archiveSlots
+    .map(([code, label]) => `<div class="paper-slot">[${code}] ${label}</div>`)
+    .join("");
+}
+
+function fitFrontTitle(name, japaneseName) {
+  const title = document.getElementById("p-front-name");
+  const subtitle = document.getElementById("p-front-jp");
+  const length = name.length;
+
+  if (length <= 8) {
+    title.style.fontSize = "62px";
+  } else if (length <= 12) {
+    title.style.fontSize = "54px";
+  } else if (length <= 18) {
+    title.style.fontSize = "44px";
+  } else {
+    title.style.fontSize = "36px";
+  }
+
+  if (japaneseName.length <= 6) {
+    subtitle.style.fontSize = "56px";
+  } else if (japaneseName.length <= 10) {
+    subtitle.style.fontSize = "48px";
+  } else {
+    subtitle.style.fontSize = "40px";
+  }
+}
+
+function positionPopup(venue) {
+  if (!popupElement.classList.contains("open")) {
+    return;
+  }
+
+  const point = map.latLngToContainerPoint([venue.lat, venue.lng]);
+  const stage = document.getElementById("stage");
+  const stageWidth = stage.clientWidth;
+  const stageHeight = stage.clientHeight;
+  const cardWidth = popupElement.offsetWidth;
+  const cardHeight = popupElement.offsetHeight;
+  const margin = 18;
+
+  let left = point.x + 26;
+  if (left + cardWidth > stageWidth - margin) {
+    left = point.x - cardWidth - 26;
+  }
+  left = Math.max(margin, Math.min(left, stageWidth - cardWidth - margin));
+
+  let top = point.y - cardHeight + 36;
+  if (top < margin) {
+    top = point.y + 20;
+  }
+  top = Math.max(margin, Math.min(top, stageHeight - cardHeight - margin));
+
+  popupElement.style.left = `${left}px`;
+  popupElement.style.top = `${top}px`;
+}
+
+function toggleCardFlip(event) {
+  if (event.target.closest(".paper-close")) {
+    return;
+  }
+
+  event.stopPropagation();
+
+  if (!activeVenue) {
+    return;
+  }
+
+  popupPinned = true;
+  clearPopupCloseTimer();
+  popupElement.classList.toggle("flipped");
+}
+
+function closePopup(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+
+  clearPopupCloseTimer();
+  clearActiveMarkers();
+
+  activeVenue = null;
+  popupPinned = false;
+  popupElement.classList.remove("open", "flipped");
+  popupElement.style.display = "none";
+  popupElement.setAttribute("aria-hidden", "true");
+}
+
+function clearActiveMarkers() {
+  document.querySelectorAll(".vm.active").forEach((element) => {
+    element.classList.remove("active");
+  });
+}
+
+function schedulePopupClose() {
+  clearPopupCloseTimer();
+  popupCloseTimer = window.setTimeout(() => {
+    if (!popupPinned) {
+      closePopup();
+    }
+  }, 280);
+}
+
+function clearPopupCloseTimer() {
+  if (popupCloseTimer) {
+    window.clearTimeout(popupCloseTimer);
+    popupCloseTimer = null;
+  }
+}
+
+function setFilter(nextFilter) {
+  filter = nextFilter;
+
+  ["all", "former", "current"].forEach((value) => {
+    document.getElementById(`f${value[0]}`).classList.toggle("on", value === nextFilter);
+  });
+
+  if (activeVenue && !isVisible(activeVenue)) {
+    closePopup();
+  }
+
+  addMarkers();
+  updateCounts();
+}
+
+function setEra(nextEra) {
+  era = nextEra;
+
+  ["all", "80s", "90s", "00s", "10s", "20s"].forEach((value) => {
+    document.getElementById(`t${value}`).classList.toggle("on", value === nextEra);
+  });
+
+  if (activeVenue && !isVisible(activeVenue)) {
+    closePopup();
+  }
+
+  addMarkers();
+  updateCounts();
+}
+
+function toggleNightMode() {
+  if (nightTransition) {
+    return;
+  }
+
+  if (nightMode) {
+    setNightModeInstant(false);
+    return;
+  }
+
+  startNightTransition();
+}
+
+function setNightModeInstant(nextNightMode) {
+  cancelAnimationFrame(nightTransitionFrame);
+  nightTransition = null;
+  nightTransitionFrame = 0;
+  nightMode = nextNightMode;
+  document.body.classList.toggle("night-mode", nightMode);
+  document.getElementById("nightToggle").classList.toggle("active", nightMode);
+  document.getElementById("stage").classList.remove("evaporating");
+
+  if (dayLayer && nightLayer) {
+    dayLayer.setOpacity(nightMode ? 0 : 1);
+    nightLayer.setOpacity(nightMode ? 1 : 0);
+  }
+
+  if (nightDustCtx && nightDustCanvas) {
+    nightDustCtx.clearRect(0, 0, nightDustCanvas.width, nightDustCanvas.height);
+  }
+}
+
+function startNightTransition() {
+  const stage = document.getElementById("stage");
+
+  if (!nightDustCanvas || !nightDustCtx || !dayLayer || !nightLayer) {
+    setNightModeInstant(true);
+    return;
+  }
+
+  resizeNightDustCanvas();
+  document.body.classList.add("night-mode");
+  document.getElementById("nightToggle").classList.add("active");
+  stage.classList.add("evaporating");
+
+  nightTransition = {
+    startedAt: performance.now(),
+    particles: createEvaporationParticles()
+  };
+
+  dayLayer.setOpacity(1);
+  nightLayer.setOpacity(0);
+
+  cancelAnimationFrame(nightTransitionFrame);
+  nightTransitionFrame = requestAnimationFrame(stepNightTransition);
+}
+
+function stepNightTransition(now) {
+  if (!nightTransition) {
+    return;
+  }
+
+  const elapsed = now - nightTransition.startedAt;
+  const progress = Math.min(elapsed / NIGHT_EVAPORATION_MS, 1);
+  const eased = easeInOutCubic(progress);
+
+  if (dayLayer) {
+    dayLayer.setOpacity(1 - eased);
+  }
+
+  if (nightLayer) {
+    nightLayer.setOpacity(eased);
+  }
+
+  drawEvaporationFrame(progress, eased, nightTransition.particles);
+
+  if (progress < 1) {
+    nightTransitionFrame = requestAnimationFrame(stepNightTransition);
+    return;
+  }
+
+  finishNightTransition();
+}
+
+function finishNightTransition() {
+  nightMode = true;
+  nightTransition = null;
+  nightTransitionFrame = 0;
+  document.getElementById("stage").classList.remove("evaporating");
+
+  if (nightDustCtx && nightDustCanvas) {
+    nightDustCtx.clearRect(0, 0, nightDustCanvas.width, nightDustCanvas.height);
+  }
+
+  if (dayLayer) {
+    dayLayer.setOpacity(0);
+  }
+
+  if (nightLayer) {
+    nightLayer.setOpacity(1);
+  }
+
+  document.getElementById("nightToggle").classList.toggle("active", true);
+}
+
+function resizeNightDustCanvas() {
+  if (!nightDustCanvas || !nightDustCtx) {
+    return;
+  }
+
+  const stage = document.getElementById("stage");
+  const width = stage.clientWidth;
+  const height = stage.clientHeight;
+  const dpr = window.devicePixelRatio || 1;
+
+  nightDustCanvas.width = Math.max(1, Math.round(width * dpr));
+  nightDustCanvas.height = Math.max(1, Math.round(height * dpr));
+  nightDustCanvas.style.width = `${width}px`;
+  nightDustCanvas.style.height = `${height}px`;
+  nightDustCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function createEvaporationParticles() {
+  const stage = document.getElementById("stage");
+  const width = stage.clientWidth;
+  const height = stage.clientHeight;
+  const columns = Math.max(10, Math.round(width / 76));
+  const rows = Math.max(8, Math.round(height / 68));
+  const particles = [];
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < columns; col += 1) {
+      const burst = Math.random() > 0.48 ? 2 : 1;
+
+      for (let index = 0; index < burst; index += 1) {
+        particles.push({
+          x: ((col + Math.random()) / columns) * width,
+          y: ((row + Math.random()) / rows) * height,
+          size: rand(0.55, 1.95),
+          driftX: rand(26, 84),
+          driftY: rand(-52, -18),
+          sway: rand(6, 24),
+          phase: rand(0, Math.PI * 2),
+          delay: rand(0, 0.24),
+          alpha: rand(0.55, 1)
+        });
+      }
+    }
+  }
+
+  return particles;
+}
+
+function drawEvaporationFrame(progress, eased, particles) {
+  if (!nightDustCtx || !nightDustCanvas) {
+    return;
+  }
+
+  const stage = document.getElementById("stage");
+  const width = stage.clientWidth;
+  const height = stage.clientHeight;
+
+  nightDustCtx.clearRect(0, 0, width, height);
+  nightDustCtx.globalCompositeOperation = "source-over";
+  nightDustCtx.fillStyle = `rgba(0, 0, 0, ${0.03 + eased * 0.38})`;
+  nightDustCtx.fillRect(0, 0, width, height);
+
+  particles.forEach((particle) => {
+    const local = Math.max(0, Math.min(1, (progress - particle.delay) / (1 - particle.delay)));
+    const travel = Math.pow(eased, 1.05) * (0.72 + particle.delay * 0.9);
+    const driftX = particle.driftX * travel;
+    const driftY = particle.driftY * travel;
+    const x = particle.x + driftX + Math.sin(particle.phase + progress * 9) * particle.sway * travel * 0.15;
+    const y = particle.y + driftY + Math.cos(particle.phase + progress * 7.25) * particle.sway * travel * 0.08;
+    const alpha = (1 - eased) * particle.alpha * (0.55 + local * 0.45);
+
+    if (alpha <= 0.01) {
+      return;
+    }
+
+    nightDustCtx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.16})`;
+    nightDustCtx.lineWidth = Math.max(0.35, particle.size * 0.28);
+    nightDustCtx.beginPath();
+    nightDustCtx.moveTo(particle.x, particle.y);
+    nightDustCtx.lineTo(x - driftX * 0.16, y - driftY * 0.16);
+    nightDustCtx.stroke();
+
+    nightDustCtx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.48})`;
+    nightDustCtx.beginPath();
+    nightDustCtx.arc(x, y, particle.size, 0, Math.PI * 2);
+    nightDustCtx.fill();
+
+    nightDustCtx.fillStyle = `rgba(244, 244, 240, ${alpha * 0.14})`;
+    nightDustCtx.beginPath();
+    nightDustCtx.arc(x, y, particle.size * 2.35, 0, Math.PI * 2);
+    nightDustCtx.fill();
+  });
+}
+
+function easeInOutCubic(value) {
+  return value < 0.5
+    ? 4 * value * value * value
+    : 1 - Math.pow(-2 * value + 2, 3) / 2;
+}
+
+function rand(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function updateCounts() {
+  const visibleCount = VENUES.filter(isVisible).length;
+  document.getElementById("hcount").textContent = `${visibleCount} venue${visibleCount !== 1 ? "s" : ""}`;
+  document.getElementById("tlcount").textContent = `${visibleCount} / ${VENUES.length}`;
+}
+
+function isVisible(venue) {
+  const matchesFilter = filter === "all" || venue.status === filter;
+  const matchesEra = era === "all" || venue.era === era;
+  return matchesFilter && matchesEra;
+}
+
+function formatCoords(lat, lng) {
+  const latLabel = lat >= 0 ? "N" : "S";
+  const lngLabel = lng >= 0 ? "E" : "W";
+  return `${Math.abs(lat).toFixed(4)}°${latLabel}  ${Math.abs(lng).toFixed(4)}°${lngLabel}`;
+}
+</script>
+</body>
+</html>
