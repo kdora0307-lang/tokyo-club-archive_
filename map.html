@@ -74,6 +74,38 @@ header {
   pointer-events: auto;
 }
 
+/* Back-to-archive button — sits inside .h-logo before the wordmark */
+.h-back {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: "DM Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  padding: 4px 8px 4px 0;
+  border-right: 1px solid rgba(72, 58, 44, 0.22);
+  margin-right: 4px;
+  transition: color 0.15s ease, transform 0.15s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.h-back:hover {
+  color: var(--ink);
+  transform: translateX(-1px);
+}
+.h-back .h-back-arrow {
+  font-size: 15px;
+  line-height: 1;
+}
+.h-back .h-back-label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
 .h-jp {
   font-family: "Noto Sans JP", sans-serif;
   font-weight: 700;
@@ -995,6 +1027,10 @@ footer {
 <body>
 <header>
   <div class="h-logo">
+    <a class="h-back" href="index.html" aria-label="Back to archive">
+      <span class="h-back-arrow">←</span>
+      <span class="h-back-label">Archive</span>
+    </a>
     <span class="h-jp">東京クラブアーカイブ</span>
     <div class="h-slash"></div>
     <span class="h-en">Tokyo Club Archive</span>
@@ -1005,7 +1041,7 @@ footer {
       <button class="fb" id="ff" type="button" onclick="setFilter('former')">Former</button>
       <button class="fb" id="fc" type="button" onclick="setFilter('current')">Current</button>
     </div>
-    <span class="h-n" id="hcount">12 venues</span>
+    <span class="h-n" id="hcount">13 venues</span>
   </div>
   <div class="h-right">
     <button class="night-toggle" id="nightToggle" onclick="toggleNightMode()">

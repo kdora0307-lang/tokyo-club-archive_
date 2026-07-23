@@ -134,31 +134,31 @@ body {
 #file-sheet-mitsuki,
 #file-sheet-www,
 #file-sheet-circus {
-  max-height: 56vh;
-  max-width: 34vw;
+  max-height: 65vh;
+  max-width: 40vw;
   width: auto;
   height: auto;
 }
 
 #file-folder-pink,
 #file-sheet-mitsuki-pink {
-  max-height: 62vh;
-  max-width: 38vw;
+  max-height: 74vh;
+  max-width: 44vw;
   width: auto;
   height: auto;
 }
 
 #file-map {
-  max-height: 40vh;
-  max-width: 22vw;
+  max-height: 48vh;
+  max-width: 26vw;
   width: auto;
   height: auto;
 }
 
 #file-polaroid,
 #file-usb {
-  max-height: 26vh;
-  max-width: 20vw;
+  max-height: 32vh;
+  max-width: 24vw;
   width: auto;
   height: auto;
 }
@@ -192,19 +192,18 @@ body {
 .click-hint {
   position: absolute;
   bottom: 60px;
-  font-size: 12px;
-  letter-spacing: 0.28em;
+  font-size: 11px;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
-  animation: pulse 2s ease-in-out infinite;
+  color: rgba(255, 255, 255, 0.42);
+  animation: pulse 2.4s ease-in-out infinite;
   z-index: 1000;
-  font-weight: 500;
+  font-weight: 300;
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.65; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.7; }
 }
 
 .hover-hint {
@@ -346,6 +345,122 @@ body {
   border-color: rgba(255, 255, 255, 0.95);
 }
 
+/* ==== Immersive video expansion ==== */
+/* Dark backdrop that fades in behind the expanding video */
+.video-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 10500;
+  pointer-events: none;
+  transition: background 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.video-backdrop.active {
+  background: rgba(0, 0, 0, 0.96);
+  pointer-events: auto;
+  cursor: zoom-out;
+}
+
+/* Container: starts at the clicked object's viewport rect, expands to fullscreen */
+.video-container {
+  position: fixed;
+  z-index: 10600;
+  overflow: hidden;
+  transform-origin: top left;
+  transition:
+    left   0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    top    0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    width  0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 0.6s ease;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+  border-radius: 4px;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-container.expanded {
+  left: 0 !important;
+  top: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0;
+}
+
+.video-immersive {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  outline: none;
+}
+
+.video-placeholder {
+  color: rgba(255, 255, 255, 0.7);
+  padding: 40px 60px;
+  font-family: 'Newsreader', serif;
+  font-size: 16px;
+  line-height: 1.7;
+  text-align: center;
+}
+.video-placeholder code {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+/* Tabs pinned to bottom, subtle */
+.video-container .video-tabs {
+  position: absolute;
+  bottom: 42px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.35s ease 0.6s;
+  pointer-events: none;
+  display: flex;
+  gap: 8px;
+}
+.video-container.expanded .video-tabs {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Close button — top right of the immersive container */
+.video-close {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.9);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-family: 'DM Mono', monospace;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.35s ease 0.55s, background 0.15s ease;
+}
+.video-container.expanded .video-close { opacity: 1; }
+.video-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 /* ==== Pink folder / club sheet reveal system ==== */
 /* Sheets that haven't emerged yet: invisible + not interactive, tucked at folder position */
 .draggable-file.inactive {
@@ -394,6 +509,12 @@ body {
   pointer-events: auto !important;
 }
 
+/* Faster transition while user is actively wheel-zooming */
+.draggable-file.zoomed.wheeling {
+  transition: transform 0.14s ease-out,
+              filter 0.55s ease;
+}
+
 /* Hint shown while zoomed */
 #zoom-hint {
   position: fixed;
@@ -413,30 +534,8 @@ body {
 
 #zoom-hint.active { opacity: 0.75; }
 
-/* ==== Repacking animation ==== */
-/* When an item is being packed back into the folder */
-.draggable-file.packing {
-  transition:
-    left 0.6s cubic-bezier(0.55, 0, 0.55, 1),
-    top 0.6s cubic-bezier(0.55, 0, 0.55, 1),
-    opacity 0.5s ease 0.15s,
-    transform 0.55s cubic-bezier(0.55, 0, 0.55, 1);
-  pointer-events: none !important;
-}
-
-.draggable-file.packed {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* Fold-away glow on the folder when items are near */
-.workspace-scene.pack-target-highlight .folder-background {
-  filter: brightness(1.12) drop-shadow(0 0 24px rgba(255, 255, 255, 0.35));
-  transition: filter 0.25s ease;
-}
-
-/* Closing transition: fade out workspace scene */
-.workspace-scene.closing { opacity: 0; transition: opacity 0.9s ease; pointer-events: none; }
+/* ==== Repacking animation - REMOVED ==== */
+/* Packing/closing feature was removed per user request */
 
 </style>
 </head>
@@ -476,13 +575,13 @@ body {
       <img id="file-usb" class="draggable-file clickable" src="assets/images/file-usb.png" alt="USB" data-action="usb-video">
       <img id="file-map" class="draggable-file clickable" src="assets/images/file-map.png" alt="Interactive Map" data-action="map">
       
-      <div class="hover-hint">Drag to explore · Click items to open · Drop back into folder to pack away</div>
+      <div class="hover-hint">Drag to explore</div>
     </div>
   </div>
 
   <!-- Camera-zoom backdrop (fades in when zooming into a document) -->
   <div id="zoom-backdrop"></div>
-  <div id="zoom-hint">Click anywhere to close</div>
+  <div id="zoom-hint">Scroll to zoom · Click to close</div>
 
   <!-- Modal overlay for video playback (USB & polaroid) -->
   <div id="modal-overlay">
@@ -682,51 +781,128 @@ body {
       if (e.key === 'Escape' && modal.classList.contains('active')) closeModal();
     });
 
-    // ---- USB: single video ----
-    function openUsbVideo() {
-      openModal(`
-        <video class="modal-video" controls autoplay playsinline
-               src="assets/videos/usb.mp4"
-               onerror="this.outerHTML='<div class=\\'modal-placeholder\\'>Add your video at<br><code>assets/videos/usb.mp4</code></div>';">
-        </video>
-      `);
-    }
+    // ---- Immersive video overlay ----
+    // The video "expands" from the clicked object to fullscreen with a smooth
+    // scale + fade, so it feels like the object opens up into the video
+    // rather than a popup window appearing.
+    let activeVideo = null;
 
-    // ---- Polaroid: three videos with tab switcher ----
-    function openPolaroidVideos() {
-      openModal(`
-        <div class="video-switcher">
-          <video class="modal-video" controls autoplay playsinline
-                 src="assets/videos/polaroid-1.mp4"
-                 onerror="this.outerHTML='<div class=\\'modal-placeholder\\'>Add your video at<br><code>assets/videos/polaroid-1.mp4</code></div>';">
-          </video>
-          <div class="video-tabs">
-            <button class="video-tab active" data-video="1">Video 1</button>
-            <button class="video-tab" data-video="2">Video 2</button>
-            <button class="video-tab" data-video="3">Video 3</button>
-          </div>
-        </div>
-      `);
-      const tabs = modalBody.querySelectorAll('.video-tab');
-      tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-          const n = tab.dataset.video;
-          tabs.forEach(t => t.classList.remove('active'));
+    function openImmersiveVideo(sourceEl, videoSources) {
+      if (activeVideo) return;
+      const rect = sourceEl.getBoundingClientRect();
+
+      // Backdrop
+      const backdrop = document.createElement('div');
+      backdrop.className = 'video-backdrop';
+      document.body.appendChild(backdrop);
+
+      // Container starts small at source position
+      const container = document.createElement('div');
+      container.className = 'video-container';
+      container.style.left   = rect.left   + 'px';
+      container.style.top    = rect.top    + 'px';
+      container.style.width  = rect.width  + 'px';
+      container.style.height = rect.height + 'px';
+
+      const singleVideo = videoSources.length === 1;
+      const tabsHTML = singleVideo ? '' : `
+        <div class="video-tabs">
+          ${videoSources.map((_, i) => `
+            <button class="video-tab${i === 0 ? ' active' : ''}" data-i="${i}">${i + 1}</button>
+          `).join('')}
+        </div>`;
+      container.innerHTML = `
+        <button class="video-close" aria-label="Close">&times;</button>
+        <video class="video-immersive" controls autoplay playsinline
+               src="${videoSources[0]}"
+               onerror="this.outerHTML='<div class=\\'video-placeholder\\'>Add your video at<br><code>${videoSources[0]}</code></div>'"></video>
+        ${tabsHTML}
+      `;
+      document.body.appendChild(container);
+      activeVideo = { container, backdrop, sourceRect: rect, sources: videoSources };
+
+      // Wire tab switcher (if present)
+      container.querySelectorAll('.video-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const i = parseInt(tab.dataset.i, 10);
+          const src = videoSources[i];
+          container.querySelectorAll('.video-tab').forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
-          const container = modalBody.querySelector('.video-switcher');
-          const oldMedia = container.querySelector('.modal-video, .modal-placeholder');
+          const oldMedia = container.querySelector('.video-immersive, .video-placeholder');
           const newVideo = document.createElement('video');
-          newVideo.className = 'modal-video';
-          newVideo.controls = true;
-          newVideo.autoplay = true;
-          newVideo.playsInline = true;
-          newVideo.src = `assets/videos/polaroid-${n}.mp4`;
+          newVideo.className = 'video-immersive';
+          newVideo.controls = newVideo.autoplay = newVideo.playsInline = true;
+          newVideo.src = src;
           newVideo.onerror = function() {
-            this.outerHTML = `<div class="modal-placeholder">Add your video at<br><code>assets/videos/polaroid-${n}.mp4</code></div>`;
+            this.outerHTML = `<div class="video-placeholder">Add your video at<br><code>${src}</code></div>`;
           };
           container.replaceChild(newVideo, oldMedia);
         });
       });
+
+      // Close button
+      container.querySelector('.video-close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeImmersiveVideo();
+      });
+
+      // Close when clicking on the container background (not on video controls / tabs)
+      container.addEventListener('click', (e) => {
+        // Any click that lands on the container itself (not on video/tabs/close) closes
+        if (e.target === container) closeImmersiveVideo();
+      });
+
+      // Backdrop click also closes (for the tiny sliver visible around the video)
+      backdrop.addEventListener('click', closeImmersiveVideo);
+
+      // Trigger reflow to lock the start position, then animate to fullscreen
+      container.offsetHeight;
+      requestAnimationFrame(() => {
+        backdrop.classList.add('active');
+        container.classList.add('expanded');
+      });
+    }
+
+    function closeImmersiveVideo() {
+      if (!activeVideo) return;
+      const { container, backdrop, sourceRect } = activeVideo;
+      // Pause any playing video so audio doesn't linger
+      container.querySelectorAll('video').forEach(v => { try { v.pause(); } catch(_){} });
+
+      // Reverse animation: shrink back to source rect
+      container.classList.remove('expanded');
+      container.style.left   = sourceRect.left   + 'px';
+      container.style.top    = sourceRect.top    + 'px';
+      container.style.width  = sourceRect.width  + 'px';
+      container.style.height = sourceRect.height + 'px';
+      backdrop.classList.remove('active');
+
+      setTimeout(() => {
+        container.remove();
+        backdrop.remove();
+        activeVideo = null;
+      }, 700);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && activeVideo) closeImmersiveVideo();
+    });
+
+    // ---- USB: single video ----
+    function openUsbVideo() {
+      const el = document.getElementById('file-usb');
+      openImmersiveVideo(el, ['assets/videos/usb.mp4']);
+    }
+
+    // ---- Polaroid: three videos with tab switcher ----
+    function openPolaroidVideos() {
+      const el = document.getElementById('file-polaroid');
+      openImmersiveVideo(el, [
+        'assets/videos/polaroid-1.mp4',
+        'assets/videos/polaroid-2.mp4',
+        'assets/videos/polaroid-3.mp4'
+      ]);
     }
 
     // ---- Pink folder: two-stage open ----
@@ -766,9 +942,20 @@ body {
     const zoomHint = document.getElementById('zoom-hint');
     let zoomedFile = null;
     let zoomJustOpened = false;
+    // Track zoom scale so scroll-wheel can adjust it further
+    let zoomBaseScale = 1;    // the "fits screen" scale applied initially
+    let zoomExtraScale = 1;   // additional user-driven scale (via wheel)
+    let zoomDx = 0, zoomDy = 0;
+
+    function applyZoomTransform() {
+      if (!zoomedFile) return;
+      const s = zoomBaseScale * zoomExtraScale;
+      zoomedFile.style.transform =
+        `translate(${zoomDx}px, ${zoomDy}px) rotate(0deg) scale(${s})`;
+    }
 
     function openSheetZoom(file) {
-      if (zoomedFile || file.classList.contains('packing') || file.classList.contains('packed')) return;
+      if (zoomedFile) return;
       zoomedFile = file;
       zoomJustOpened = true;
       setTimeout(() => { zoomJustOpened = false; }, 260);
@@ -790,16 +977,24 @@ body {
       file.style.transform = `rotate(${rotation}deg) scale(1)`;
       file.offsetHeight; // force reflow
 
-      // Compute target: center + scale so height fills ~86vh (respecting aspect)
-      const targetH = window.innerHeight * 0.86;
-      const scale = Math.min(targetH / rect.height, (window.innerWidth * 0.92) / rect.width);
+      // Base scale: fit the sheet edge-to-edge so it *fills* the viewport
+      // (previously we capped at 86vh / 92vw — that felt too small).
+      // For readability, fit the shorter axis edge-to-edge and let the doc
+      // extend slightly past the other axis if aspect requires.
+      const fitH = window.innerHeight * 1.02 / rect.height;
+      const fitW = window.innerWidth  * 0.98 / rect.width;
+      // Use the LARGER of the two so the sheet actually fills the screen.
+      // (User can wheel-out if they want to see the whole doc.)
+      zoomBaseScale = Math.max(fitH, fitW);
+      zoomExtraScale = 1;
+
       const currentCX = rect.left + rect.width / 2;
       const currentCY = rect.top + rect.height / 2;
-      const dx = (window.innerWidth / 2) - currentCX;
-      const dy = (window.innerHeight / 2) - currentCY;
+      zoomDx = (window.innerWidth  / 2) - currentCX;
+      zoomDy = (window.innerHeight / 2) - currentCY;
 
       requestAnimationFrame(() => {
-        file.style.transform = `translate(${dx}px, ${dy}px) rotate(0deg) scale(${scale})`;
+        applyZoomTransform();
         zoomBackdrop.classList.add('active');
         zoomHint.classList.add('active');
       });
@@ -825,8 +1020,29 @@ body {
         delete file.dataset._origTransform;
         delete file.dataset._origZ;
         zoomedFile = null;
+        zoomBaseScale = 1;
+        zoomExtraScale = 1;
+        zoomDx = zoomDy = 0;
       }, 780);
     }
+
+    // Scroll wheel while zoomed: zoom in/out further for inspection.
+    // Uses a faster transition (.wheeling class) so scrolling feels responsive.
+    let wheelSettleTimer = null;
+    document.addEventListener('wheel', (e) => {
+      if (!zoomedFile) return;
+      e.preventDefault();
+      const dir = e.deltaY < 0 ? 1 : -1;
+      const step = 0.15;
+      const next = zoomExtraScale * (1 + dir * step);
+      zoomExtraScale = Math.min(4, Math.max(0.5, next));
+      zoomedFile.classList.add('wheeling');
+      applyZoomTransform();
+      clearTimeout(wheelSettleTimer);
+      wheelSettleTimer = setTimeout(() => {
+        if (zoomedFile) zoomedFile.classList.remove('wheeling');
+      }, 250);
+    }, { passive: false });
 
     zoomBackdrop.addEventListener('click', closeSheetZoom);
     document.addEventListener('keydown', (e) => {
@@ -841,120 +1057,7 @@ body {
       closeSheetZoom();
     }, true);
 
-    // ---- Repacking: drop items back on the folder to pack them away ----
-    // Returns true if the item's drop-point is close enough to the folder to pack.
-    function isNearFolder(clientX, clientY) {
-      const bg = document.querySelector('.folder-background');
-      if (!bg) return false;
-      const r = bg.getBoundingClientRect();
-      // The folder image is a photo of an open folder; the "landing zone" for
-      // a document is roughly the folder's inner surface — a comfortably-sized
-      // region centered inside the image, not the full bbox.
-      const inset = Math.min(r.width, r.height) * 0.18;
-      return (
-        clientX >= r.left + inset &&
-        clientX <= r.right - inset &&
-        clientY >= r.top + inset &&
-        clientY <= r.bottom - inset
-      );
-    }
-
-    let packedCount = 0;
-    let closingInProgress = false;
-
-    function packFile(file) {
-      if (file.classList.contains('packing') || file.classList.contains('packed')) return;
-      const folderEl = document.getElementById('file-folder-pink');
-      const folderState = fileState.get(folderEl) || {};
-      const targetLeft = folderState.left || (workspaceScene.clientWidth / 2 - file.offsetWidth / 2);
-      const targetTop = folderState.top || (workspaceScene.clientHeight / 2 - file.offsetHeight / 2);
-
-      file.classList.add('packing');
-      // Animate: slide to folder + shrink slightly + fade out
-      file.style.left = targetLeft + 'px';
-      file.style.top = targetTop + 'px';
-      file.style.transform = 'rotate(0deg) scale(0.4)';
-      file.style.opacity = '0';
-
-      setTimeout(() => {
-        file.classList.remove('packing');
-        file.classList.add('packed');
-        packedCount++;
-        checkAllPacked();
-      }, 620);
-    }
-
-    function packableFiles() {
-      // Exclude: pink folder itself, hidden/inactive sheets, already-packed items
-      return draggableFiles.filter(f =>
-        f.id !== 'file-folder-pink' &&
-        !f.classList.contains('inactive') &&
-        !f.classList.contains('packed')
-      );
-    }
-
-    function totalPackable() {
-      // Everything except the pink folder + currently-inactive sheets counts.
-      return draggableFiles.filter(f =>
-        f.id !== 'file-folder-pink' &&
-        !f.classList.contains('inactive')
-      ).length;
-    }
-
-    function checkAllPacked() {
-      if (closingInProgress) return;
-      if (packedCount >= totalPackable() && totalPackable() > 0) {
-        closeFolderScene();
-      }
-    }
-
-    function closeFolderScene() {
-      closingInProgress = true;
-      // Also pack the pink folder itself with a little flourish
-      const folder = document.getElementById('file-folder-pink');
-      if (folder) {
-        folder.classList.add('packing');
-        folder.style.transform = 'rotate(0deg) scale(0.6)';
-        folder.style.opacity = '0';
-      }
-      // Fade out workspace, then swap back to the closed folder scene
-      setTimeout(() => {
-        workspaceScene.classList.add('closing');
-        setTimeout(() => resetToClosedFolder(), 900);
-      }, 500);
-    }
-
-    function resetToClosedFolder() {
-      // Reset every draggable back to its base "inactive" state so re-opening works.
-      workspaceScene.classList.remove('closing', 'is-ready', 'active', 'pack-target-highlight');
-      workspaceScene.style.opacity = '';
-      draggableFiles.forEach(f => {
-        f.classList.remove('packing', 'packed', 'emerging', 'zoomed');
-        f.style.left = ''; f.style.top = ''; f.style.transform = '';
-        f.style.opacity = ''; f.style.zIndex = '';
-      });
-      // Restore hidden state on the 3 club sheets
-      HIDDEN_UNTIL_UNLOCK.forEach(id => {
-        const s = document.getElementById(id);
-        if (s) s.classList.add('inactive');
-      });
-      // Restore pink folder to its "closed" (with pink sheet visible) state
-      const folder = document.getElementById('file-folder-pink');
-      if (folder) {
-        folder.dataset.stage = 'closed';
-        folder.dataset.action = 'open-pink-folder';
-        folder.src = 'assets/images/file-sheet-mitsuki-pink.png';
-        folder.alt = 'Pink Folder — Mitsuki Sheet';
-      }
-      packedCount = 0;
-      scatterInitialized = false;
-      closingInProgress = false;
-      // Go back to stage 3 (the closed folder view). User can click again to re-open.
-      document.querySelector(`.${stages[currentStage]}`).classList.remove('active');
-      currentStage = 2;
-      document.querySelector(`.${stages[currentStage]}`).classList.add('active');
-      document.body.style.cursor = 'pointer';
-    }
+    // (Repacking and folder-closing feature removed per user request.)
 
     // Click handler for first 3 stages
     document.body.addEventListener('click', (e) => {
@@ -1022,32 +1125,18 @@ body {
         const nextTop = pointerState.originTop + deltaY;
         const state = fileState.get(file);
         setFilePosition(file, nextLeft, nextTop, state.rotation, state.zIndex);
-
-        // Highlight the folder when this file (if packable) is dragged over it
-        if (file.id !== 'file-folder-pink' && isNearFolder(e.clientX, e.clientY)) {
-          workspaceScene.classList.add('pack-target-highlight');
-        } else {
-          workspaceScene.classList.remove('pack-target-highlight');
-        }
       });
 
       file.addEventListener('pointerup', (e) => {
         if (!pointerState || pointerState.file !== file || pointerState.pointerId !== e.pointerId) return;
 
         const wasDrag = pointerState.dragStarted;
-        const upX = e.clientX, upY = e.clientY;
         file.classList.remove('is-dragging');
         file.releasePointerCapture(e.pointerId);
         pointerState = null;
-        workspaceScene.classList.remove('pack-target-highlight');
 
         if (!wasDrag) {
           handleFileClick(file);
-          return;
-        }
-        // If it was a drag and dropped over the folder, pack it away (except the folder itself)
-        if (file.id !== 'file-folder-pink' && isNearFolder(upX, upY)) {
-          packFile(file);
         }
       });
 
